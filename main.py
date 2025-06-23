@@ -82,61 +82,61 @@ def signup(data: SignupRequest):
         }
     }
 
-# @app.get("/users/{user_id}")
-# def get_user(user_id: str, authorization: str = Header(...)):
-#     auth_user, password = decode_auth(authorization)
-#     if auth_user != user_id or user_id not in users_db or users_db[user_id]["password"] != password:
-#         if user_id not in users_db:
-#             raise HTTPException(status_code=404, detail={"message": "No User found"})
-#         raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
+@app.get("/users/{user_id}")
+def get_user(user_id: str, authorization: str = Header(...)):
+    auth_user, password = decode_auth(authorization)
+    if auth_user != user_id or user_id not in users_db or users_db[user_id]["password"] != password:
+        if user_id not in users_db:
+            raise HTTPException(status_code=404, detail={"message": "No User found"})
+        raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
 
-#     user = users_db[user_id]
-#     response = {
-#         "user_id": user_id,
-#         "nickname": user.get("nickname", user_id)
-#     }
-#     if user.get("comment"):
-#         response["comment"] = user["comment"]
+    user = users_db[user_id]
+    response = {
+        "user_id": user_id,
+        "nickname": user.get("nickname", user_id)
+    }
+    if user.get("comment"):
+        response["comment"] = user["comment"]
 
-#     return {
-#         "message": "User details by user_id",
-#         "user": response
-#     }
+    return {
+        "message": "User details by user_id",
+        "user": response
+    }
 
-# @app.patch("/users/{user_id}")
-# def update_user(user_id: str, data: PatchUserRequest, authorization: str = Header(...)):
-#     auth_user, password = decode_auth(authorization)
-#     if auth_user not in users_db or users_db[auth_user]["password"] != password:
-#         raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
-#     if auth_user != user_id:
-#         raise HTTPException(status_code=403, detail={"message": "No Permission for Update"})
-#     if user_id not in users_db:
-#         raise HTTPException(status_code=404, detail={"message": "No User found"})
+@app.patch("/users/{user_id}")
+def update_user(user_id: str, data: PatchUserRequest, authorization: str = Header(...)):
+    auth_user, password = decode_auth(authorization)
+    if auth_user not in users_db or users_db[auth_user]["password"] != password:
+        raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
+    if auth_user != user_id:
+        raise HTTPException(status_code=403, detail={"message": "No Permission for Update"})
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail={"message": "No User found"})
 
-#     if data.nickname is None and data.comment is None:
-#         raise HTTPException(status_code=400, detail={"message": "User updation failed", "cause": "required nickname or comment"})
+    if data.nickname is None and data.comment is None:
+        raise HTTPException(status_code=400, detail={"message": "User updation failed", "cause": "required nickname or comment"})
 
-#     if hasattr(data, "user_id") or hasattr(data, "password"):
-#         raise HTTPException(status_code=400, detail={"message": "User updation failed", "cause": "not updatable user_id and password"})
+    if hasattr(data, "user_id") or hasattr(data, "password"):
+        raise HTTPException(status_code=400, detail={"message": "User updation failed", "cause": "not updatable user_id and password"})
 
-#     if data.nickname is not None:
-#         users_db[user_id]["nickname"] = data.nickname if data.nickname else user_id
-#     if data.comment is not None:
-#         users_db[user_id]["comment"] = data.comment
+    if data.nickname is not None:
+        users_db[user_id]["nickname"] = data.nickname if data.nickname else user_id
+    if data.comment is not None:
+        users_db[user_id]["comment"] = data.comment
 
-#     return {
-#         "message": "User successfully updated",
-#         "recipe": [{
-#             "nickname": users_db[user_id].get("nickname"),
-#             "comment": users_db[user_id].get("comment", "")
-#         }]
-#     }
+    return {
+        "message": "User successfully updated",
+        "recipe": [{
+            "nickname": users_db[user_id].get("nickname"),
+            "comment": users_db[user_id].get("comment", "")
+        }]
+    }
 
-# @app.post("/close")
-# def close_account(authorization: str = Header(...)):
-#     user_id, password = decode_auth(authorization)
-#     if user_id not in users_db or users_db[user_id]["password"] != password:
-#         raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
+@app.post("/close")
+def close_account(authorization: str = Header(...)):
+    user_id, password = decode_auth(authorization)
+    if user_id not in users_db or users_db[user_id]["password"] != password:
+        raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
 
-#     del users_db[user_id]
-#     return {"message": "Account and user successfully removed"}
+    del users_db[user_id]
+    return {"message": "Account and user successfully removed"}
