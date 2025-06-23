@@ -8,7 +8,7 @@ import re
 
 app = FastAPI()
 
-# Simulated in-memory user DB
+# User DB in memory for simplicity
 users_db: Dict[str, Dict] = {}
 
 # Validation regex patterns
@@ -16,7 +16,7 @@ USER_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{6,20}$")
 PASSWORD_PATTERN = re.compile(r"^[\x21-\x7E]{8,20}$")  # ASCII without spaces/control chars
 
 # Schemas
-class SignupRequest():
+class SignupRequest(BaseModel):
     user_id: str
     password: str
 
@@ -32,7 +32,7 @@ class SignupRequest():
             raise ValueError("password must be 8-20 ASCII characters without spaces/control codes")
         return v
 
-class PatchUserRequest():
+class PatchUserRequest(BaseModel):
     nickname: Optional[str] = None
     comment: Optional[str] = None
 
@@ -51,17 +51,15 @@ class PatchUserRequest():
 # Utility Functions
 def decode_auth(auth_header: str):
     scheme, credentials = get_authorization_scheme_param(auth_header)
-    if scheme.lower() != "basic" or not credentials:
+    if scheme is None or scheme.lower() != "basic" or not credentials:
         return None, None
-    decoded = base64.b64decode(credentials).decode("utf-8")
+    try:
+        decoded = base64.b64decode(credentials).decode("utf-8")
+    except Exception:
+        return None, None
     parts = decoded.split(":", 1)
     return parts if len(parts) == 2 else (None, None)
 
-def authenticate(auth: str = Header(...)):
-    user_id, password = decode_auth(auth)
-    if user_id not in users_db or users_db[user_id]["password"] != password:
-        raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
-    return user_id, password
 
 # Routes
 @app.post("/signup")
@@ -83,11 +81,13 @@ def signup(data: SignupRequest):
     }
 
 @app.get("/users/{user_id}")
-def get_user(user_id: str, authorization: str = Header(...)):
+def get_user(user_id: str, authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
     auth_user, password = decode_auth(authorization)
-    if auth_user != user_id or user_id not in users_db or users_db[user_id]["password"] != password:
-        if user_id not in users_db:
-            raise HTTPException(status_code=404, detail={"message": "No User found"})
+    if user_id not in users_db:
+        raise HTTPException(status_code=404, detail={"message": "No User found"})
+    if auth_user != user_id or users_db[user_id]["password"] != password:
         raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
 
     user = users_db[user_id]
@@ -104,7 +104,9 @@ def get_user(user_id: str, authorization: str = Header(...)):
     }
 
 @app.patch("/users/{user_id}")
-def update_user(user_id: str, data: PatchUserRequest, authorization: str = Header(...)):
+def update_user(user_id: str, data: PatchUserRequest, authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
     auth_user, password = decode_auth(authorization)
     if auth_user not in users_db or users_db[auth_user]["password"] != password:
         raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
@@ -133,7 +135,9 @@ def update_user(user_id: str, data: PatchUserRequest, authorization: str = Heade
     }
 
 @app.post("/close")
-def close_account(authorization: str = Header(...)):
+def close_account(authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
     user_id, password = decode_auth(authorization)
     if user_id not in users_db or users_db[user_id]["password"] != password:
         raise HTTPException(status_code=401, detail={"message": "Authentication Failed"})
