@@ -16,7 +16,7 @@ USER_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{6,20}$")
 PASSWORD_PATTERN = re.compile(r"^[\x21-\x7E]{8,20}$")  # ASCII without spaces/control chars
 
 # Schemas
-class SignupRequest(BaseModel):
+class SignupRequest():
     user_id: str
     password: str
 
@@ -32,7 +32,7 @@ class SignupRequest(BaseModel):
             raise ValueError("password must be 8-20 ASCII characters without spaces/control codes")
         return v
 
-class PatchUserRequest(BaseModel):
+class PatchUserRequest():
     nickname: Optional[str] = None
     comment: Optional[str] = None
 
